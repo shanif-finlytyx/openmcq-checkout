@@ -9,8 +9,7 @@ function CheckoutContent() {
 
   useEffect(() => {
     if (!token) {
-      alert("Invalid payment link");
-      window.location.href = "openmcq://payment-failed";
+      window.location.href = "mcqsolver://payment-failure?reason=no_token";
       return;
     }
 
@@ -18,17 +17,14 @@ function CheckoutContent() {
     try {
       payload = JSON.parse(atob(token.split(".")[1]));
     } catch (err) {
-      alert("Expired or invalid link");
-      window.location.href = "openmcq://payment-failed";
+      window.location.href = "mcqsolver://payment-failure?reason=invalid_token";
       return;
     }
 
-    // Load Razorpay script immediately
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
 
     script.onload = () => {
-      // Free plan (amount 0)
       if (payload.finalAmount === 0) {
         verifyPayment(null, payload);
         return;
@@ -36,7 +32,7 @@ function CheckoutContent() {
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RJve4oor7MGl8k",
-        amount: payload.finalAmount * 100, // in paise
+        amount: payload.finalAmount * 100,
         currency: "INR",
         name: "OpenMCQ",
         description: "Premium Subscription",
@@ -52,7 +48,7 @@ function CheckoutContent() {
         theme: { color: "#8b5cf6" },
         modal: {
           ondismiss: () => {
-            window.location.href = "openmcq://payment-cancelled";
+            window.location.href = "mcqsolver://payment-failure?reason=cancelled";
           },
         },
       };
@@ -62,14 +58,12 @@ function CheckoutContent() {
     };
 
     script.onerror = () => {
-      alert("Failed to load payment gateway");
-      window.location.href = "openmcq://payment-failed";
+      window.location.href = "mcqsolver://payment-failure?reason=network_error";
     };
 
     document.body.appendChild(script);
   }, [token]);
 
-  // Send token + payment response to your verify API
   const verifyPayment = async (razorpayResponse: any, payload: any) => {
     const body = {
       courseId: payload.courseId,
@@ -79,7 +73,7 @@ function CheckoutContent() {
       preferredSubjects: payload.preferredSubjects,
       signature: razorpayResponse?.razorpay_signature || null,
       studentId: payload.studentId,
-      token: token, // ← Same JWT token sent back
+      token: token,
     };
 
     try {
@@ -91,23 +85,25 @@ function CheckoutContent() {
 
       const result = await res.json();
 
-      if (result.success) {
-        window.location.href = "openmcq://payment-success";
+      // THIS IS WHAT YOU WANTED — USE deepLink FROM BACKEND
+      if (result.deepLink) {
+        window.location.href = result.deepLink;
+      } else if (result.success) {
+        window.location.href = `mcqsolver://payment-success?orderId=${payload.orderId}&status=success`;
       } else {
-        window.location.href = "openmcq://payment-failed";
+        window.location.href = `mcqsolver://payment-failure?reason=${result.message || "failed"}`;
       }
     } catch (err) {
-      window.location.href = "openmcq://payment-failed";
+      window.location.href = "mcqsolver://payment-failure?reason=network_error";
     }
   };
 
-  // Simple loading screen
   return (
     <div className="min-h-screen bg-linear-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-600 mx-auto mb-8"></div>
         <h1 className="text-3xl font-bold text-purple-800">Opening Secure Payment...</h1>
-        <p className="mt-4 text-gray-600">Please wait • Do not close</p>
+        <p className="mt-4 text-gray-600">Please wait • Do not close this page</p>
       </div>
     </div>
   );
