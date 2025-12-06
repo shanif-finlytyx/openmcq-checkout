@@ -204,5 +204,7 @@ function InfoBox({
         {value}
       </p>
     </div>
+
+    
   );
 }
