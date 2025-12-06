@@ -55,7 +55,7 @@ function CheckoutContent() {
       }
 
       const options = {
-        key: "rzp_test_RJve4oor7MGl8k",
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: payload.finalAmount * 100,
         currency: "INR",
         name: "OpenMCQ",
