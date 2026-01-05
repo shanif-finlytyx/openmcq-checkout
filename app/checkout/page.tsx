@@ -77,7 +77,7 @@ function CheckoutContent() {
     };
 
     try {
-      const res = await fetch("https://api.openmcq.com/api/subscription/verify-payment", {
+      const res = await fetch("https://productionapi.openmcq.com/api/subscription/verify-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
