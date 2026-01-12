@@ -67,6 +67,7 @@ function CheckoutContent() {
   const verifyPayment = async (razorpayResponse: any, payload: any) => {
     const body = {
       courseId: payload.courseId,
+      couponCode: payload.couponCode || null,
       orderId: payload.orderId,
       paymentId: razorpayResponse?.razorpay_payment_id || null,
       planId: payload.planId,
